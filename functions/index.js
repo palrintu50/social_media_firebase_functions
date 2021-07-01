@@ -2,6 +2,20 @@ const functions = require("firebase-functions");
 const admin = require('firebase-admin');
 const express = require('express');
 const app = express();
+const firebase = require('firebase');
+firebase.initializeApp();
+
+
+
+const firebaseConfig = {
+    apiKey: "AIzaSyBkRtwxQPxecqRQz3PsqPjBwAW5gwleJU8",
+    authDomain: "socialape-73c3a.firebaseapp.com",
+    projectId: "socialape-73c3a",
+    storageBucket: "socialape-73c3a.appspot.com",
+    messagingSenderId: "284486409459",
+    appId: "1:284486409459:web:e25e647bd01de6da8eeb86",
+    measurementId: "G-LLTYGFFZ4H"
+  };
 
 admin.initializeApp();
 
@@ -49,5 +63,25 @@ app.post('/screams', (req , res) =>{
 } );
 
 
+// Signup Route 
+app.post('/signup', (req, res) => {
+    const newUser = {
+        email: req.body.email,
+        password: req.body.password,
+        confirmPassword: req.body.confirmPassword,
+        handle: req.body.handle,
+    }
+// TODO: Validate Data
+  firebase.auth().createUserWithEmailAndPassword(newUser.email, newUser.password)
+  .then(data =>{
+      return res.status(201).json({message: 'user ${data.user.uid} signed up successfully'})
+  })
+  .catch(err =>{
+      console.error(err);
+      return res.status(500).json({ error: err.code});
 
-exports.api = functions.https.onRequest(app);
+  });
+});
+
+
+exports.api = functions.region('asia-southeast1').https.onRequest(app);

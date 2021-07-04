@@ -42,8 +42,34 @@ app.get('/screams',(req , res) =>{
 
 })
 
+const FBAuth = (req, res, next) => {
+    let idToken;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')){
+        idToken = req.headers.authorization.split('Bearer ')[1];
+    }
+    else {
+        console.error('No Token Found')
+        return res.status(403).json({error: 'Unauthorized'});
+    }
 
-app.post('/screams', (req , res) =>{
+    admin.auth().verifyIdToken(idToken)
+    .then(decodedToken =>{
+        req.user = decodedToken;
+        console.log(decodedToken);
+        return db.collection('users')
+        .where('userId', '==', req.user.uid)
+        .limit(1)
+        .get(); 
+    })
+    .then(data => {
+        req.user.handle = data.docs[0].data().handle;
+    })
+}
+    
+
+
+
+app.post('/screams', FBAuth , (req , res) =>{
     const newScream = {
         body: req.body.body,
         userHandle: req.body.userHandle,
@@ -104,7 +130,11 @@ app.post('/signup', (req, res) => {
         console.error(err);
         if(err.code === 'auth.createdAt-already-in-use'){
             return res.status(400).json({ email: 'Email is already in use'})
-        } else {
+        } if (err.code === 'auth/wrong-password') {
+            return res.status(403).json({ general: 'Wrong credentials , please Try Again'})
+            
+        } 
+        else {
         return res.status(500).json({error: err.code });
     }
     })
